@@ -5,13 +5,12 @@ using UnityEngine;
 public class PlayerMovement : MonoBehaviour {
 
     #region Fields 
-
+    // This field is visible and editable from the editor, but set in the script.
     [SerializeField]
     private Rigidbody2D _rb2D;
 
     private readonly float _speed = 5.0f;
-    private readonly float _rotationSpeed = 6.0f;
-    private float yMove = 0f;
+    private readonly float _rotationSpeed = 7.0f;
 
     #endregion
 
@@ -26,7 +25,6 @@ public class PlayerMovement : MonoBehaviour {
 	void Update () {
         HandleLocalMovement();
         HandleRotation();
-        ConstrainVelocity();
 	}
 
     #endregion
@@ -35,15 +33,19 @@ public class PlayerMovement : MonoBehaviour {
 
     private void HandleLocalMovement()
     {
+         // If this game is not a local game, we will not handle local movement
         if (GameStateManager.GameState != GameStateManager.States.LocalGame)
         {
             return;
         }
 
-        yMove = Input.GetAxis("Vertical");
-        var prevInput = yMove;
+        var yMove = Input.GetAxis("Vertical");
+        yMove = yMove < 0 ? 0 : yMove;
         var moveDirection = transform.up * yMove * _speed;
-        _rb2D.AddForce(moveDirection);
+        if ((_rb2D.velocity.x < 3 && _rb2D.velocity.x > -3) 
+            && (_rb2D.velocity.y < 3 && _rb2D.velocity.y > -3)) {
+            _rb2D.AddForce(moveDirection);
+        }
     }
 
     private void HandleRotation() {
@@ -53,30 +55,17 @@ public class PlayerMovement : MonoBehaviour {
         transform.Rotate(rotation);
     }
 
-    private void ConstrainVelocity() {
-        if (_rb2D.velocity.y > 0) {
-            _rb2D.velocity = _rb2D.velocity.y >= 1f ? new Vector2(_rb2D.velocity.x, 1f) : _rb2D.velocity;
-        } else {
-            _rb2D.velocity = _rb2D.velocity.y <= -1f ? new Vector2(_rb2D.velocity.x, -1f) : _rb2D.velocity;
-        }
-
-        if (_rb2D.velocity.x > 0) {
-            _rb2D.velocity = _rb2D.velocity.x >= 1f ? new Vector2(1f, _rb2D.velocity.y) : _rb2D.velocity;
-        } else {
-            _rb2D.velocity = _rb2D.velocity.x <= -1f ? new Vector2(-1f, _rb2D.velocity.y) : _rb2D.velocity;
-        }
-
-    }
-
     private void Init()
     {
+        // If the game object this script is attached to doesn't have a Rigidbody2D, add it.
         if (gameObject.GetComponent<Rigidbody2D>() == null)
         {
             gameObject.AddComponent<Rigidbody2D>();
         }
+        // Grab the instance of the Rigidbody2D
         _rb2D = gameObject.GetComponent<Rigidbody2D>();
 
-        // temp init for local game. This state needs to be set elsewhere.
+        // temp init for local game. This state needs to be set elsewhere. Like in the menu when the player selects local games.
         GameStateManager.GameState = GameStateManager.States.LocalGame;
     }
 
